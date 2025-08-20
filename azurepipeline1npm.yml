@@ -1,0 +1,85 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- main
+
+pool:
+ vmImage: ubuntu-latest
+
+stages:
+- stage: Build
+  jobs: 
+  - job: Build
+    pool:
+       vmImage: ubuntu-latest
+    steps:
+    - task: Npm@1
+      displayName: Npm Install
+      inputs:
+        command: install
+    - task: Npm@1
+      displayName: npm build
+      inputs:
+        command: custom
+        customCommand: run build
+    - task: PublishBuildArtifacts@1
+      inputs:
+        PathtoPublish: 'build'
+        ArtifactName: 'drop'
+        publishLocation: 'Container'
+#-------------------------------------
+# - stage: Deploy
+#   jobs:
+#     - job: Deploy
+#       pool:
+#        vmImage: ubuntu-latest
+#       steps:
+#       - task: DownloadBuildArtifacts@1
+#         inputs:
+
+#           buildType: 'current'
+#           downloadType: 'single'
+#           artifactName: 'drop'
+#           downloadPath: '$(System.ArtifactsDirectory)'
+#       - task: AzureRmWebAppDeployment@5
+#         inputs:
+#           ConnectionType: 'AzureRM'
+#           azureSubscription: 'ME-MngEnvMCAP843502-v-shipradhan-1 (c5ade1be-3e22-415a-adf2-b3ec2fc417ec)'
+#           appType: 'webAppLinux'
+#           WebAppName: 'webappnewyou'
+#           packageForLinux: '$(System.DefaultWorkingDirectory)/drop'
+#           RuntimeStack: 'STATICSITE|1.0'
+#           DeploymentTypeLinux: 'oneDeploy'
+#-----------------------------------------------------
+
+- stage: Deploy
+  displayName: Deploy
+  dependsOn: Build 
+  jobs:
+    - deployment: DeployDev
+      environment: dev
+      strategy:
+        runOnce:
+          deploy:
+            steps:
+            - task: DownloadBuildArtifacts@1
+              inputs:
+                buildType: 'current'
+                downloadType: 'single'
+                artifactName: 'drop'
+                downloadPath: '$(System.ArtifactsDirectory)'
+            - task: AzureRmWebAppDeployment@5
+              inputs:
+                ConnectionType: 'AzureRM'
+                azureSubscription: 'ME-MngEnvMCAP843502-v-shipradhan-1 (c5ade1be-3e22-415a-adf2-b3ec2fc417ec)'
+                appType: 'webAppLinux'
+                WebAppName: 'datacomweb'
+                packageForLinux: '$(System.ArtifactsDirectory)/drop'
+                RuntimeStack: 'STATICSITE|1.0'
+                DeploymentTypeLinux: 'oneDeploy'
+
+            
+            
